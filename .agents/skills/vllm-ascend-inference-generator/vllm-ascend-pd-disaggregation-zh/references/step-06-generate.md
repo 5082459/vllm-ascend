@@ -62,7 +62,7 @@
 {output_dir}/
 ├── sources/
 │   ├── {model_name}.md
-│   ├── pd_disaggregation_mooncake_multi_node.html
+│   ├── pd_disaggregation_mooncake_multi_node.md
 │   ├── launch_online_dp.py
 │   ├── run_dp_template_prefill_node*.sh
 │   ├── run_dp_template_decode_node*.sh
@@ -90,36 +90,11 @@
 
 ## 参数计算公式
 
-```text
-# tp_size 从模板中获取，保持原值不变
-dp_size_local = 单机卡数 / tp_size  # tp_size 为模板中的值
-
-prefill_dp_size = prefill_instances × nodes_per_prefill_instance × dp_size_local
-decode_dp_size = decode_instances × nodes_per_decode_instance × dp_size_local
-
-# dp_rank_start：单个实例内按节点递增，各实例独立计算
-dp_rank_start = (node_index - 1) × dp_size_local  # node_index 从 1 开始
-
-# kv_port
-prefill_kv_port = 36000 + instance_index × 100
-decode_kv_port = 36000 + prefill_instances × 100 + instance_index × 100
-
-# engine_id
-prefill_engine_id = instance_index + 1  # 1, 2, 3...
-decode_engine_id = prefill_instances + instance_index + 1
-```
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「PD分离参数计算公式」章节。
 
 ## kv_port 配置要求
 
-| NPUs per Node | Recommended kv_port |
-|---------------|---------------------|
-| 8 (A2) | >= 28000 |
-| 16 (A3) | >= 36000 |
-
-推荐配置：
-- Prefill instance 1: 36000
-- Prefill instance 2: 36100
-- Decode instance 1: 36200
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「kv_port 端口范围」章节。
 
 ## 生成步骤
 
@@ -246,17 +221,27 @@ DECODER_HOSTS="{decode_d1_n1_ip} {decode_d1_n1_ip} ... {decode_d2_n1_ip} {decode
 DECODER_PORTS="7100 7101 ... 7100 7101 ..."
 
 if [ "$PROXY_TYPE" == "basic" ]; then
-    python load_balance_proxy_server_example.py ...
+    python load_balance_proxy_server_example.py \
+        --port $PROXY_PORT \
+        --host $PROXY_HOST \
+        --prefiller-hosts $PREFILLER_HOSTS \
+        --prefiller-ports $PREFILLER_PORTS \
+        --decoder-hosts $DECODER_HOSTS \
+        --decoder-ports $DECODER_PORTS
 else
-    python load_balance_proxy_layerwise_server_example.py ...
+    python load_balance_proxy_layerwise_server_example.py \
+        --port $PROXY_PORT \
+        --host $PROXY_HOST \
+        --prefiller-hosts $PREFILLER_HOSTS \
+        --prefiller-ports $PREFILLER_PORTS \
+        --decoder-hosts $DECODER_HOSTS \
+        --decoder-ports $DECODER_PORTS
 fi
 ```
 
 **hosts/ports 计算规则**：
-- `PREFILLER_HOSTS`：使用用户输入的各 Prefill 节点实际 IP，每个 IP 重复 dp_size_local 次
-- `PREFILLER_PORTS`：每节点 7100 到 7100+dp_size_local-1
-- `DECODER_HOSTS`：使用用户输入的各 Decode 节点实际 IP，每个 IP 重复 dp_size_local 次
-- `DECODER_PORTS`：每节点 7100 到 7100+dp_size_local-1
+
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「代理 hosts/ports 生成规则」章节。
 
 ## 日志条目
 

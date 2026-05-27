@@ -136,7 +136,7 @@
     },
     {
       "header": "P节点数",
-      "id": "nodes_per_prefill",
+      "id": "nodes_per_prefill_instance",
       "question": "请选择每个 Prefill 实例中的机器数量",
       "options": [
         {"label": "1 (Recommended)", "description": "每个 Prefill 实例使用 1 台机器"},
@@ -145,7 +145,7 @@
     },
     {
       "header": "D节点数",
-      "id": "nodes_per_decode",
+      "id": "nodes_per_decode_instance",
       "question": "请选择每个 Decode 实例中的机器数量",
       "options": [
         {"label": "1 (Recommended)", "description": "每个 Decode 实例使用 1 台机器"},
@@ -264,8 +264,8 @@
 | nic_name | nic_name | 多节点通信网卡 |
 | prefill_instances | prefill_instances | Prefill 实例数量 |
 | decode_instances | decode_instances | Decode 实例数量 |
-| nodes_per_prefill | nodes_per_prefill_instance | 每个 Prefill 实例的节点数 |
-| nodes_per_decode | nodes_per_decode_instance | 每个 Decode 实例的节点数 |
+| nodes_per_prefill_instance | nodes_per_prefill_instance | 每个 Prefill 实例的节点数 |
+| nodes_per_decode_instance | nodes_per_decode_instance | 每个 Decode 实例的节点数 |
 | proxy_type | proxy_type | 代理类型 |
 | prefill_p{P}_n{N}_ip | prefill_ips | Prefill 实例P节点N的IP地址（动态生成） |
 | decode_d{D}_n{N}_ip | decode_ips | Decode 实例D节点N的IP地址（动态生成） |
@@ -307,31 +307,11 @@ IP 参数 ID 格式：
 
 ## PD 分离参数计算公式
 
-```text
-# tp_size 从模板中获取，保持原值不变
-
-dp_size_local = 单机卡数 / tp_size  # tp_size 为模板中的值
-
-prefill_dp_size = prefill_instances × nodes_per_prefill_instance × dp_size_local
-decode_dp_size = decode_instances × nodes_per_decode_instance × dp_size_local
-
-prefill_kv_port = 36000 + instance_index × 100
-decode_kv_port = 与对应 Prefill 实例相同或继续递增
-
-prefill_engine_id = 1, 2, 3... (按实例递增)
-decode_engine_id = prefill_count + 1, prefill_count + 2... (继续递增)
-```
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「PD分离参数计算公式」章节。
 
 ## 机型说明
 
-| 机型 | 卡数 |
-|---|---|
-| A3 超节点（Atlas 900 A3） | 16 |
-| A2（Atlas 800 A2） | 8 |
-
-**卡数计算**：
-- A3 超节点：固定 16 卡
-- A2：固定 8 卡
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「kv_port 端口范围」章节中的机型与卡数对应关系。
 
 ## 日志条目
 

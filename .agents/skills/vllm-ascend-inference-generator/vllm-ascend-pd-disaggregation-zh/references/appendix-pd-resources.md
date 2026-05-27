@@ -36,12 +36,12 @@
 
 ### kv_port 端口范围
 
-| 机型 | 卡数 | kv_port 范围 |
-|---|---|---|
-| A2 | 8 | ≥ 28000 |
-| A3 | 16 | ≥ 36000 |
+| 机型 | 卡数 | 保留端口范围 | 建议 kv_port |
+|---|---|---|---|
+| A2 | 8 | 20000 - 27999 | ≥ 28000 |
+| A3 | 16 | 20000 - 35999 | ≥ 36000 |
 
-**注意**：每个实例的 kv_port 必须唯一，通常按 engine_id 递增分配（如 36000, 36100, 36200）。
+**注意**：kv_port 公式以 `36000` 为基数，同时满足 A2（≥28000）和 A3（≥36000）的要求。每个实例的 kv_port 必须唯一，按 100 递增分配（如 36000, 36100, 36200）。
 
 ### 代理类型与 kv_connector 对应关系
 
@@ -93,31 +93,43 @@ python load_balance_proxy_layerwise_server_example.py \
 
 ## PD分离参数计算公式
 
+### 公共参数
+
+```text
+单机卡数 = (machine_type == "A3超节点") ? 16 : 8
+```
+
 ### Prefill 参数
 
 ```text
-prefill_dp_size = prefill_instances × nodes_per_prefill_instance × dp_size_local
+prefill_dp_size_local = 单机卡数 / prefill_tp_size
+prefill_dp_size = prefill_instances × nodes_per_prefill_instance × prefill_dp_size_local
 prefill_kv_port = 36000 + instance_index × 100
 prefill_engine_id = instance_index + 1 (1, 2, 3...)
-prefill_dp_rank_start = 0 (各实例独立计数)
+prefill_dp_rank_start = (node_index - 1) × prefill_dp_size_local (各实例独立计数)
 ```
 
 ### Decode 参数
 
 ```text
-decode_dp_size = decode_instances × nodes_per_decode_instance × dp_size_local
-decode_kv_port = 与 Prefill 实例相同或继续递增
+decode_dp_size_local = 单机卡数 / decode_tp_size
+decode_dp_size = decode_instances × nodes_per_decode_instance × decode_dp_size_local
+decode_kv_port = 36000 + prefill_instances × 100 + instance_index × 100
 decode_engine_id = prefill_count + instance_index + 1 (继续递增)
-decode_dp_rank_start = instance_index × nodes_per_instance × dp_size_local (全局递增)
+decode_dp_rank_start = (node_index - 1) × decode_dp_size_local (各实例独立计数，与 Prefill 一致)
 ```
 
-### 示例配置（2P1D，A3，TP=8）
+**重要**：dp_rank_start 计算规则与 step-06-generate.md 一致：单个实例内按节点递增，各实例独立计算。不要使用全局递增公式。
+
+### 示例配置（2P1D，A3，Prefill TP=8，Decode TP=4）
 
 ```text
-# 注意：tp_size 从模板中获取，保持原值不变
+# Prefill 和 Decode 可能使用不同 tp_size
 单机卡数 = 16
-tp_size = 8  # 从模板中获取
-dp_size_local = 16 / 8 = 2
+prefill_tp_size = 8  # 从 Prefill 模板获取
+decode_tp_size = 4   # 从 Decode 模板获取
+prefill_dp_size_local = 16 / 8 = 2
+decode_dp_size_local = 16 / 4 = 4
 
 Prefill:
 prefill_dp_size = 2 × 1 × 2 = 4
@@ -125,8 +137,17 @@ P1N1: kv_port=36000, engine_id=1, dp_rank_start=0
 P2N1: kv_port=36100, engine_id=2, dp_rank_start=0
 
 Decode:
-decode_dp_size = 1 × 1 × 2 = 2
+decode_dp_size = 1 × 1 × 4 = 4
 D1N1: kv_port=36200, engine_id=3, dp_rank_start=0
+```
+
+**多实例 Decode dp_rank_start 示例**（4D2N，A3，decode_dp_size_local=4）：
+
+```text
+D1N1: dp_rank_start=0, D1N2: dp_rank_start=4  (实例1独立计数)
+D2N1: dp_rank_start=0, D2N2: dp_rank_start=4  (实例2独立计数)
+D3N1: dp_rank_start=0, D3N2: dp_rank_start=4  (实例3独立计数)
+D4N1: dp_rank_start=0, D4N2: dp_rank_start=4  (实例4独立计数)
 ```
 
 ## 代理 hosts/ports 生成规则

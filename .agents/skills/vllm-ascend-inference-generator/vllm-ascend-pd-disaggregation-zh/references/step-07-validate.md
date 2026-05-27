@@ -67,7 +67,7 @@ Glob pattern: sources/start_container.sh
 | 文件路径 | 必需 |
 |---|---|
 | `sources/{model_name}.md` | ✓ |
-| `sources/pd_disaggregation_mooncake_multi_node.html` | ✓ |
+| `sources/pd_disaggregation_mooncake_multi_node.md` | ✓ |
 | `sources/launch_online_dp.py` | ✓ |
 | `sources/run_dp_template_prefill_node*.sh` | ✓ |
 | `sources/run_dp_template_decode_node*.sh` | ✓ |
@@ -132,13 +132,7 @@ Glob pattern: sources/start_container.sh
 
 **验证公式**：
 
-```text
-prefill_dp_size = prefill_instances × nodes_per_prefill_instance × dp_size_local
-prefill_kv_port = 36000 + instance_index × 100
-
-decode_dp_size = decode_instances × nodes_per_decode_instance × dp_size_local
-decode_kv_port = 与 Prefill 实例对应或继续递增
-```
+见 [appendix-pd-resources.md](appendix-pd-resources.md)「PD分离参数计算公式」章节。
 
 ## 验证方法
 
