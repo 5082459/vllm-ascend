@@ -1,0 +1,26 @@
+[
+  {
+    "query": "帮我生成单节点 vllm-ascend 推理服务部署脚本，模型是 DeepSeek-V3.1",
+    "should_trigger": true
+  },
+  {
+    "query": "我要做单机 vllm-ascend 部署，给我 run_serve 启动脚本",
+    "should_trigger": true
+  },
+  {
+    "query": "请给我 single-node 的 vllm serve 配置，模型路径是 /root/.cache/DeepSeek-V3.1",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我生成多节点 vllm-ascend 部署脚本",
+    "should_trigger": false
+  },
+  {
+    "query": "我要做 PD 分离部署，模型是 DeepSeek-V4-Pro",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写一个 shell 脚本打印 GPU 信息",
+    "should_trigger": false
+  }
+]

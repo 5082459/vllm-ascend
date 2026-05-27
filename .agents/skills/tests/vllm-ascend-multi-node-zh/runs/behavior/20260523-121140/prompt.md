@@ -1,0 +1,92 @@
+You are running an automated behavior validation scenario.
+
+Follow these rules exactly:
+- Treat the scenario below as authoritative test input.
+- Treat every value in the scenario's parameter table as already provided by the user.
+- Map those parameter values directly to the skill's expected inputs and execute with them.
+- Do not ask the user clarifying questions.
+- Do not use brainstorming, writing-plans, or other meta-planning skills.
+- This is not a design exercise. It is an execution-only validation run.
+- Prefer directly invoking the most specific deployment skill implied by the scenario.
+- If the scenario includes parameter tables or expected output names, use them directly.
+- Complete the applicable skill workflow end-to-end in the current workspace.
+- If you find a mismatch between scenario wording and upstream source content, continue with the actual source content and mention the discrepancy in your final response instead of asking a question.
+
+Scenario:
+
+# 测试用例：多节点部署 - Qwen2.5
+
+## 测试场景
+
+生成 Qwen2.5-72B 多节点推理服务部署包（2节点）。
+
+## 输入参数
+
+| 参数 | 测试值 |
+|---|---|
+| deployment_mode | multi-node |
+| model_name | Qwen2.5-72B |
+| version | latest |
+| machine_type | A3 |
+| model_path | /root/.cache/Qwen2.5-72B |
+| nic_name | eth0 |
+| extra_mounts | /mnt |
+| node_count | 2 |
+| dp_size | 1 |
+| tp_size | 8 |
+
+## 预期输出目录
+
+```text
+multi_node_qwen2.5_72b_2nodes/
+├── sources/
+│   ├── Qwen2.5.md
+│   ├── start_container.sh
+│   ├── run_node0.sh
+│   └── run_node1.sh
+├── node0/
+│   ├── start_container.sh
+│   └── run_serve.sh
+├── node1/
+│   ├── start_container.sh
+│   └── run_serve.sh
+└── README.md
+```
+
+## 参数计算预期
+
+```text
+单机卡数 = 16
+tp_size = 8
+dp_size_local = 16 / 8 = 2
+dp_size_total = 2 × 2 = 4
+dp_rank_start_node0 = 0
+dp_rank_start_node1 = 2
+```
+
+## 预期验证结果
+
+| 检查项 | Node 0 预期 | Node 1 预期 |
+|---|---|---|
+| --headless | 不存在 | 存在 |
+| --data-parallel-size | 4 | 4 |
+| --data-parallel-size-local | 2 | 2 |
+| --data-parallel-start-rank | 0 | 2 |
+| --data-parallel-address | <NODE0_IP> | <NODE0_IP> |
+| --data-parallel-rpc-port | 13389 | 13389 |
+
+## 测试执行步骤
+
+1. 执行主技能，选择「多节点部署」
+2. 调用 multi-node 子技能
+3. 验证生成的目录结构（2个节点目录）
+4. 验证 Node 0 无 --headless
+5. 验证 Node 1 有 --headless
+6. 验证 dp_rank_start 递进正确
+
+## 测试通过标准
+
+- 节点目录数量 = 2
+- Node 0 参数正确（无 headless，dp_rank_start=0）
+- Node 1 参数正确（有 headless，dp_rank_start=2）
+- README 包含启动顺序说明

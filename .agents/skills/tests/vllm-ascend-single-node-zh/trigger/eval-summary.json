@@ -1,0 +1,65 @@
+{
+  "skill_name": "vllm-ascend-single-node-zh",
+  "description": "Use when the user asks to generate vllm-ascend single-node / 单节点 / single-node deployment scripts, startup scripts, or deployment configuration for DeepSeek, Qwen, or GLM on Ascend.",
+  "results": [
+    {
+      "query": "帮我生成单节点 vllm-ascend 推理服务部署脚本，模型是 DeepSeek-V3.1",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User explicitly requests single-node (单节点) vllm-ascend deployment scripts for DeepSeek-V3.1 model, which exactly matches the skill trigger conditions",
+      "matched_terms": ["单节点", "vllm-ascend", "部署脚本", "DeepSeek-V3.1"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "我要做单机 vllm-ascend 部署，给我 run_serve 启动脚本",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User requests single-machine (单机) vllm-ascend deployment with run_serve startup script - exactly what single-node skill generates",
+      "matched_terms": ["单机", "vllm-ascend", "部署", "run_serve"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "请给我 single-node 的 vllm serve 配置，模型路径是 /root/.cache/DeepSeek-V3.1",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User explicitly mentions single-node and requests vllm serve configuration - direct match to skill trigger",
+      "matched_terms": ["single-node", "vllm", "serve配置"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "帮我生成多节点 vllm-ascend 部署脚本",
+      "should_trigger": false,
+      "confidence": 0.95,
+      "reason": "User asks for multi-node (多节点) deployment, but this skill is specifically for single-node mode. These are different deployment modes.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    },
+    {
+      "query": "我要做 PD 分离部署，模型是 DeepSeek-V4-Pro",
+      "should_trigger": false,
+      "confidence": 0.95,
+      "reason": "User asks for PD-disaggregation deployment, but this skill is for single-node mode. These are different deployment modes.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    },
+    {
+      "query": "帮我写一个 shell 脚本打印 GPU 信息",
+      "should_trigger": false,
+      "confidence": 1.0,
+      "reason": "User asks for generic shell script, unrelated to vllm-ascend deployment.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}

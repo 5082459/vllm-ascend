@@ -1,0 +1,26 @@
+[
+  {
+    "query": "帮我生成 2 节点的 vllm-ascend 推理部署脚本，模型是 DeepSeek-V3.1",
+    "should_trigger": true
+  },
+  {
+    "query": "我要做多机 vllm-ascend 分布式部署，给我 node0 和 node1 的启动脚本",
+    "should_trigger": true
+  },
+  {
+    "query": "请输出 multi-node 的 vllm serve 配置，node_count=2，dp_size=2，tp_size=8",
+    "should_trigger": true
+  },
+  {
+    "query": "帮我生成单节点 vllm-ascend 部署脚本",
+    "should_trigger": false
+  },
+  {
+    "query": "我要做 PD 分离部署，模型是 DeepSeek-V4-Pro",
+    "should_trigger": false
+  },
+  {
+    "query": "帮我写一个 Python TCP server",
+    "should_trigger": false
+  }
+]

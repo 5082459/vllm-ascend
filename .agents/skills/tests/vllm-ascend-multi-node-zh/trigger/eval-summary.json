@@ -1,0 +1,65 @@
+{
+  "skill_name": "vllm-ascend-multi-node-zh",
+  "description": "Use when the user asks to generate vllm-ascend multi-node / 多节点 / distributed deployment scripts, startup scripts for node0/node1, or multi-node deployment configuration for DeepSeek, Qwen, or GLM on Ascend.",
+  "results": [
+    {
+      "query": "帮我生成 2 节点的 vllm-ascend 推理部署脚本，模型是 DeepSeek-V3.1",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User explicitly requests 2-node (2节点) vllm-ascend deployment scripts for DeepSeek-V3.1 - direct match to multi-node skill trigger",
+      "matched_terms": ["2节点", "vllm-ascend", "部署脚本", "DeepSeek-V3.1"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "我要做多机 vllm-ascend 分布式部署，给我 node0 和 node1 的启动脚本",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User requests multi-machine (多机) distributed deployment with node0/node1 scripts - exactly what multi-node skill generates",
+      "matched_terms": ["多机", "分布式部署", "node0", "node1"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "请输出 multi-node 的 vllm serve 配置，node_count=2，dp_size=2，tp_size=8",
+      "should_trigger": true,
+      "confidence": 1.0,
+      "reason": "User explicitly mentions multi-node and requests configuration - direct match to skill trigger",
+      "matched_terms": ["multi-node", "vllm", "node_count"],
+      "pass": true,
+      "triggered": true
+    },
+    {
+      "query": "帮我生成单节点 vllm-ascend 部署脚本",
+      "should_trigger": false,
+      "confidence": 0.95,
+      "reason": "User asks for single-node (单节点) deployment, but this skill is for multi-node mode. These are different deployment modes.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    },
+    {
+      "query": "我要做 PD 分离部署，模型是 DeepSeek-V4-Pro",
+      "should_trigger": false,
+      "confidence": 0.95,
+      "reason": "User asks for PD-disaggregation deployment, but this skill is for multi-node mode. These are different deployment modes.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    },
+    {
+      "query": "帮我写一个 Python TCP server",
+      "should_trigger": false,
+      "confidence": 1.0,
+      "reason": "User asks for generic Python TCP server, unrelated to vllm-ascend deployment.",
+      "matched_terms": [],
+      "pass": true,
+      "triggered": false
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0
+  }
+}
