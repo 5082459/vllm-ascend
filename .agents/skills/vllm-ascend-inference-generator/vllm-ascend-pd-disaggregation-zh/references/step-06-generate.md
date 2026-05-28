@@ -36,7 +36,10 @@
 
 ## 硬性规则
 
-- 所有脚本先从 sources 目录拷贝，再做修改。
+- **文件操作方式**：
+  - 从 sources 目录拷贝文件：使用 Bash `cp` 命令
+  - 替换占位符：使用 Edit 工具进行字符串替换
+  - 新生成文件：使用 Write 工具
 - 为每个 Prefill/Decode 实例节点生成独立的目录。
 - 生成 proxy 目录和启动脚本。
 - 在 README 的「工作流执行日志」部分记录步骤 6 摘要。
@@ -100,14 +103,40 @@
 
 ### 步骤 1：拷贝容器脚本
 
-- Prefill：`sources/start_container.sh` → `prefill/start_container.sh`
-- Decode：`sources/start_container.sh` → `decode/start_container.sh`
-- 修改点：
+**操作方式**：先 `cp` 拷贝，再 `Edit` 替换占位符。
 
-| 占位符 | 替换为 | 说明 |
-|---|---|---|
-| `{model_path}` | 用户提供的模型路径 | 模型权重目录 |
-| `{extra_mounts}` | 用户提供的挂载目录 | 额外挂载 |
+1. **拷贝容器脚本**：
+   ```bash
+   cp sources/start_container.sh prefill/start_container.sh
+   cp sources/start_container.sh decode/start_container.sh
+   ```
+
+2. **替换挂载路径**（使用 Edit 工具）：
+
+   教程原始格式：`-v /mnt/sfs_turbo/.cache:/root/.cache`
+
+   **替换规则**：
+
+   | 原始内容 | 替换为 | 说明 |
+   |---|---|---|
+   | `-v <宿主机路径>:/root/.cache` | `-v {model_path}:{model_path}` | 宿主机与容器内路径保持一致 |
+   | 无额外挂载 | `-v {extra_mounts}:{extra_mounts}` | 在模型挂载行后添加 |
+
+   **说明**：使用 `{model_path}:{model_path}` 挂载方式，确保容器内路径与宿主机路径一致，run_dp_template.sh 直接使用 `{model_path}` 作为 vllm serve 模型路径。
+
+   **示例**：
+   ```bash
+   # 原始（从教程提取）
+   -v /mnt/sfs_turbo/.cache:/root/.cache
+
+   # 替换后
+   -v /root/.cache/DeepSeek-V4-Pro:/root/.cache/DeepSeek-V4-Pro \
+   -v /mnt:/mnt
+   ```
+
+3. **最终生成文件**：prefill/start_container.sh、decode/start_container.sh
+
+**注意**：prefill 和 decode 的 start_container.sh 内容相同，修改点一致。
 
 ### 步骤 2：生成 PD 实例节点目录
 
@@ -120,26 +149,44 @@
 | Prefill | `prefill_instances × nodes_per_prefill_instance` | `run_dp_template_prefill_node` | `kv_producer` | prefill_dp_size |
 | Decode | `decode_instances × nodes_per_decode_instance` | `run_dp_template_decode_node` | `kv_consumer` | decode_dp_size |
 
-对每个实例 N 的每个节点 M，生成以下文件：
+对每个实例 N 的每个节点 M，按以下顺序操作：
 
-1. **拷贝 launch_online_dp.py**：
-   - 来源：`sources/launch_online_dp.py`
-   - 目标：`{role}/instance{N}/node{M}/launch_online_dp.py`
-   - 修改：无（直接拷贝）
+1. **拷贝 launch_online_dp.py**（无需修改）：
+
+   使用 Bash `cp` 命令直接拷贝：
+   ```bash
+   cp sources/launch_online_dp.py {role}/instance{N}/node{M}/launch_online_dp.py
+   ```
+
+   **注意**：此文件无需任何修改，直接拷贝即可。
 
 2. **拷贝 run_dp_template.sh**：
 
    **模板选择规则**：
-   - 如果 `{M}` <= 教程模板数量：使用 `sources/run_dp_template_{role_prefix}_node{M}.sh`
-   - 如果 `{M}` > 教程模板数量：使用 `sources/run_dp_template_{role_prefix}_node1.sh` 作为基础模板
+   - Prefill 节点：使用 `sources/run_dp_template_prefill_node{编号}.sh`
+   - Decode 节点：使用 `sources/run_dp_template_decode_node{编号}.sh`
+   - 如果节点编号 `{M}` <= 教程模板数量：使用对应编号的模板
+   - 如果节点编号 `{M}` > 教程模板数量：使用 `node1.sh` 作为基础模板
 
-   来源：按上述规则选择模板文件
-   目标：`{role}/instance{N}/node{M}/run_dp_template.sh`
-   - 修改点：
+   **操作方式**：先 `cp` 拷贝，再 `Edit` 替换占位符。
+
+   a. **拷贝模板文件**（按节点类型区分）：
+
+   **Prefill 节点**：
+   ```bash
+   cp sources/run_dp_template_prefill_node{模板编号}.sh prefill/instance{N}/node{M}/run_dp_template.sh
+   ```
+
+   **Decode 节点**：
+   ```bash
+   cp sources/run_dp_template_decode_node{模板编号}.sh decode/instance{N}/node{M}/run_dp_template.sh
+   ```
+
+   b. **替换占位符**（使用 Edit 工具，按表格顺序依次替换）：
 
 | 占位符 | 替换为 | 说明 |
 |---|---|---|
-| `/path_to_weight/{model_name}` | 用户提供的模型路径 | vllm serve 模型路径 |
+| `/root/.cache/{model_name}` 或 `/path_to_weight/{model_name}` | 用户提供的模型路径 `{model_path}` | vllm serve 模型路径，与容器挂载路径一致 |
 | `{nic_name}` | 用户提供的网卡名称 | 网络通信网卡 |
 | `{local_ip}` | 用户输入的当前节点 IP | 当前节点实际 IP |
 | `kv_connector` | 按规则选择 | 见下方 `kv_connector` 替换规则 |
@@ -161,7 +208,7 @@
 2. 如果模板中 `kv_connector` 为其他类型（如 `NpuConnector` 等）：
    - **保持模板原值不变**，不做替换
 
-3. **生成 start_serve.sh**：
+3. **生成 start_serve.sh**（使用 Write 工具）：
 
 ```bash
 #!/bin/bash
@@ -198,11 +245,15 @@ python launch_online_dp.py \
 
 ### 步骤 3：生成 Proxy 目录
 
-1. **拷贝代理脚本**：
-   - `sources/load_balance_proxy_server_example.py` → `proxy/load_balance_proxy_server_example.py`
-   - `sources/load_balance_proxy_layerwise_server_example.py` → `proxy/load_balance_proxy_layerwise_server_example.py`
+1. **拷贝代理脚本**（使用 Bash `cp` 命令，无需修改）：
+   ```bash
+   cp sources/load_balance_proxy_server_example.py proxy/load_balance_proxy_server_example.py
+   cp sources/load_balance_proxy_layerwise_server_example.py proxy/load_balance_proxy_layerwise_server_example.py
+   ```
 
-2. **生成 start_proxy.sh**：
+   **注意**：代理脚本无需修改，直接拷贝即可。
+
+2. **生成 start_proxy.sh**（使用 Write 工具）：
 
 ```bash
 #!/bin/bash
