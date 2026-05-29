@@ -2,40 +2,34 @@
 
 ## 目标
 
-收集 PD 分离部署所需参数。
+收集 PD 分离部署所需的全部参数，写入工作流执行日志。
 
-## 硬性规则
+## 关键规则
 
-- 仅使用本文件列出的示例值。
-- **如果所有参数已通过场景文件或 prompt 预定义，直接使用这些参数，跳过 AskUserQuestion**
-- **检测预定义参数：如果 prompt 或场景文件中包含完整的参数表（含所有必需参数），视为预定义模式**
-- 使用 `request_user_input` 工具，一次 1-4 个问题。
-- `header` 必须 12 个字符以内。
-- `options` 必须包含 2-3 个互斥选项。
-- 第一个选项必须是推荐项，label 要带 "(Recommended)"。
-- 不要手动加 "Other" 选项，客户端会自动补自由输入项。
-- 在 README 的「工作流执行日志」部分记录步骤 1 摘要。
+- 仅使用本文件列出的示例值；用户可通过 "Other" 自由输入。
+- **预定义模式优先**：如果 prompt / 场景文件已经把所有必需参数列齐，直接读取，不要再调用 AskUserQuestion。
+- 使用 `request_user_input` 工具，每次问 1-4 个问题。
+- `header` 不超过 12 字符，`options` 给 2-3 个互斥选项；第一项是推荐项，label 末尾加 `(Recommended)`。
+- 不要手动添加 "Other"，工具会自动补。
+- IP 类参数没有"推荐示例"——示例 IP 不带 `(Recommended)` 标签，避免用户误选。
 
-## 预定义参数检测规则
+## 预定义参数检测
 
-当检测到以下条件时，跳过 AskUserQuestion，直接使用预定义参数：
+如果以下三条全部满足，则跳过 AskUserQuestion，直接从 prompt 或场景文件提取参数：
 
-1. **检测标记**：prompt 包含「所有参数已在下方参数表中预定义」或「跳过所有 AskUserQuestion」
-2. **参数表存在**：存在 Markdown 表格，包含 `参数 | 测试值` 或类似格式
-3. **参数完整性**：表格包含所有必需参数：
-   - model_name, version, machine_type, model_path, extra_mounts, nic_name
-   - prefill_instances, decode_instances, nodes_per_prefill_instance, nodes_per_decode_instance
-   - proxy_type
-   - 所有 Prefill IP（prefill_p{P}_n{N}_ip）、Decode IP（decode_d{D}_n{N}_ip）、Proxy IP（proxy_ip）
+1. prompt 里出现「所有参数已在下方参数表中预定义」或「跳过所有 AskUserQuestion」之类的标记
+2. 存在 `参数 | 测试值` 形式的 Markdown 表格
+3. 表格覆盖所有必需参数：
+   - `model_name`、`version`、`machine_type`、`model_path`、`extra_mounts`、`nic_name`
+   - `prefill_instances`、`decode_instances`、`nodes_per_prefill_instance`、`nodes_per_decode_instance`
+   - `proxy_type`
+   - 全部 Prefill IP（`prefill_p{P}_n{N}_ip`）、Decode IP（`decode_d{D}_n{N}_ip`）、`proxy_ip`
 
-当检测到预定义模式时：
-- 直接从参数表读取值
-- 不调用 AskUserQuestion
-- 记录「步骤 1：使用预定义参数，跳过交互式问答」到日志
+命中预定义模式时，在日志记录「步骤 1：使用预定义参数，跳过交互式问答」。
 
 ## 参数收集
 
-### 第零批问题（模型和版本）
+### 第零批：模型与版本
 
 ```json
 {
@@ -64,7 +58,7 @@
 }
 ```
 
-### 第一批问题
+### 第一批：硬件与挂载
 
 ```json
 {
@@ -83,8 +77,8 @@
       "id": "model_path",
       "question": "请输入模型权重存储路径",
       "options": [
-        {"label": "默认路径 (Recommended)", "description": "使用 /root/.cache/{model_name}，自动替换模型名"},
-        {"label": "标准路径", "description": "使用 /data/models/{model_name}，自动替换模型名"}
+        {"label": "默认路径 (Recommended)", "description": "/root/.cache/{model_name}，自动替换模型名"},
+        {"label": "标准路径", "description": "/data/models/{model_name}，自动替换模型名"}
       ]
     },
     {
@@ -109,7 +103,7 @@
 }
 ```
 
-### 第二批问题
+### 第二批：实例与节点规模
 
 ```json
 {
@@ -156,7 +150,7 @@
 }
 ```
 
-### 第三批问题
+### 第三批：代理类型
 
 ```json
 {
@@ -174,9 +168,13 @@
 }
 ```
 
-### 第四批问题（节点 IP 地址）
+### 第四批：节点 IP
 
-**Prefill 节点 IP：**
+> IP 没有"通用合理值"。所有候选项只是示例占位，不带 `(Recommended)` 标签——用户必须从 "Other" 输入实际 IP，否则后续生成的脚本无法在真实环境运行。
+>
+> 根据 `prefill_instances × nodes_per_prefill` 与 `decode_instances × nodes_per_decode` 动态生成对应数量的 IP 问题。AskUserQuestion 单批最多 4 个，超过时分多批问。
+
+**Prefill 节点 IP 示例**：
 
 ```json
 {
@@ -184,57 +182,26 @@
     {
       "header": "P1N1 IP",
       "id": "prefill_p1_n1_ip",
-      "question": "请输入 Prefill 实例1 节点1 的 IP 地址",
+      "question": "请输入 Prefill 实例1 节点1 的 IP 地址（请用 Other 输入实际 IP）",
       "options": [
-        {"label": "192.168.1.1 (Recommended)", "description": "示例 IP，请通过 Other 输入实际 IP"},
-        {"label": "10.0.1.1", "description": "示例 IP，请通过 Other 输入实际 IP"}
+        {"label": "192.168.1.1（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"},
+        {"label": "10.0.1.1（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"}
       ]
     },
     {
       "header": "P1N2 IP",
       "id": "prefill_p1_n2_ip",
-      "question": "请输入 Prefill 实例1 节点2 的 IP 地址（如有）",
+      "question": "请输入 Prefill 实例1 节点2 的 IP 地址（如有，请用 Other 输入实际 IP）",
       "options": [
-        {"label": "192.168.1.2 (Recommended)", "description": "示例 IP，请通过 Other 输入实际 IP"},
-        {"label": "10.0.1.2", "description": "示例 IP，请通过 Other 输入实际 IP"}
+        {"label": "192.168.1.2（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"},
+        {"label": "10.0.1.2（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"}
       ]
     }
   ]
 }
 ```
 
-> 注：根据 `prefill_instances × nodes_per_prefill` 数量，动态生成对应数量的 IP 问题。
-
-**Decode 节点 IP：**
-
-```json
-{
-  "questions": [
-    {
-      "header": "D1N1 IP",
-      "id": "decode_d1_n1_ip",
-      "question": "请输入 Decode 实例1 节点1 的 IP 地址",
-      "options": [
-        {"label": "192.168.2.1 (Recommended)", "description": "示例 IP，请通过 Other 输入实际 IP"},
-        {"label": "10.0.2.1", "description": "示例 IP，请通过 Other 输入实际 IP"}
-      ]
-    },
-    {
-      "header": "D1N2 IP",
-      "id": "decode_d1_n2_ip",
-      "question": "请输入 Decode 实例1 节点2 的 IP 地址（如有）",
-      "options": [
-        {"label": "192.168.2.2 (Recommended)", "description": "示例 IP，请通过 Other 输入实际 IP"},
-        {"label": "10.0.2.2", "description": "示例 IP，请通过 Other 输入实际 IP"}
-      ]
-    }
-  ]
-}
-```
-
-> 注：根据 `decode_instances × nodes_per_decode` 数量，动态生成对应数量的 IP 问题。
-
-**Proxy 节点 IP：**
+**Decode 节点 IP** 与 **Proxy IP** 同样按上述风格构造。Proxy 只需要 1 个：
 
 ```json
 {
@@ -242,17 +209,17 @@
     {
       "header": "Proxy IP",
       "id": "proxy_ip",
-      "question": "请输入 Proxy 服务的 IP 地址",
+      "question": "请输入 Proxy 服务的 IP 地址（请用 Other 输入实际 IP）",
       "options": [
-        {"label": "192.168.3.1 (Recommended)", "description": "示例 IP，请通过 Other 输入实际 IP"},
-        {"label": "10.0.3.1", "description": "示例 IP，请通过 Other 输入实际 IP"}
+        {"label": "192.168.3.1（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"},
+        {"label": "10.0.3.1（示例）", "description": "示例 IP，仅占位，请通过 Other 输入实际值"}
       ]
     }
   ]
 }
 ```
 
-## 参数映射
+## 参数映射表
 
 | id | 参数名 | 含义 |
 |---|---|---|
@@ -264,60 +231,30 @@
 | nic_name | nic_name | 多节点通信网卡 |
 | prefill_instances | prefill_instances | Prefill 实例数量 |
 | decode_instances | decode_instances | Decode 实例数量 |
-| nodes_per_prefill_instance | nodes_per_prefill_instance | 每个 Prefill 实例的节点数 |
-| nodes_per_decode_instance | nodes_per_decode_instance | 每个 Decode 实例的节点数 |
+| nodes_per_prefill_instance | nodes_per_prefill_instance | 每 Prefill 实例的节点数 |
+| nodes_per_decode_instance | nodes_per_decode_instance | 每 Decode 实例的节点数 |
 | proxy_type | proxy_type | 代理类型 |
-| prefill_p{P}_n{N}_ip | prefill_ips | Prefill 实例P节点N的IP地址（动态生成） |
-| decode_d{D}_n{N}_ip | decode_ips | Decode 实例D节点N的IP地址（动态生成） |
-| proxy_ip | proxy_ip | Proxy 服务IP地址 |
+| prefill_p{P}_n{N}_ip | prefill_ips | Prefill 节点 IP（按实例×节点动态生成） |
+| decode_d{D}_n{N}_ip | decode_ips | Decode 节点 IP（按实例×节点动态生成） |
+| proxy_ip | proxy_ip | Proxy 服务 IP |
 
-## IP 参数命名规则
+## IP 命名规则
 
-IP 参数 ID 格式：
-- Prefill：`prefill_p{实例号}_n{节点号}_ip`（如 `prefill_p1_n1_ip`）
-- Decode：`decode_d{实例号}_n{节点号}_ip`（如 `decode_d1_n1_ip`）
+- Prefill：`prefill_p{实例号}_n{节点号}_ip`，例如 `prefill_p1_n1_ip`
+- Decode：`decode_d{实例号}_n{节点号}_ip`，例如 `decode_d1_n1_ip`
 - Proxy：`proxy_ip`
 
-**动态生成逻辑**：
-- 根据 `prefill_instances × nodes_per_prefill_instance` 计算 Prefill IP 问题数量
-- 根据 `decode_instances × nodes_per_decode_instance` 计算 Decode IP 问题数量
-- 每次最多收集 4 个 IP（AskUserQuestion 限制）
+## 共享映射
 
-## 版本映射
+版本映射、代理类型映射在 [SKILL.md「全局约定」](../SKILL.md#全局约定) 一节统一定义，本步骤直接采用。
 
-将 `{version_tag}` 替换为映射的分支或标签，优先尝试 release 分支，再是 tag：
+## 参数计算公式
 
-| 用户输入 | GitHub 分支 | GitHub 标签 |
-|---|---|---|
-| latest | main | - |
-| 0.18.0 | releases/v0.18.0 | v0.18.0 |
-| 0.17.0 | releases/v0.17.0 | v0.17.0 |
-
-**选择优先级**：
-
-1. 优先尝试 `releases/v{version}` 分支。
-2. 如果分支不存在，使用 `v{version}` 标签。
-
-## 代理类型映射
-
-| proxy_type | 代理脚本 | kv_connector |
-|---|---|---|
-| 基础版本 | load_balance_proxy_server_example.py | MooncakeConnector |
-| 分层版本 | load_balance_proxy_layerwise_server_example.py | MooncakeLayerwiseConnector |
-
-## PD 分离参数计算公式
-
-见 [appendix-pd-resources.md](appendix-pd-resources.md)「PD分离参数计算公式」章节。
-
-## 机型说明
-
-见 [appendix-pd-resources.md](appendix-pd-resources.md)「kv_port 端口范围」章节中的机型与卡数对应关系。
+详见 [appendix-pd-resources.md「PD分离参数计算公式」](appendix-pd-resources.md#pd分离参数计算公式)。计算工作在步骤 4 通过 `scripts/compute_pd_params.py` 完成，本步骤只需把 `tp_size` 从模板里读出来作为输入。
 
 ## 日志条目
 
-在 README 的「工作流执行日志」部分记录：
-
+向 README「Workflow Execution Log」追加：
 - 步骤状态
-- 收集的参数摘要
-- 计算后的 dp_size_local、prefill_dp_size、decode_dp_size
-- 用户输入的任何自由格式值
+- 参数摘要（哪些来自预定义、哪些来自交互回答）
+- 用户在 "Other" 中提供的自由格式值

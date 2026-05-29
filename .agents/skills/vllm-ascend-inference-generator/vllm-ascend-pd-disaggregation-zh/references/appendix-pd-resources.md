@@ -2,13 +2,24 @@
 
 ## KV Connector 类型说明
 
-### kv_transfer_config 配置
+教程里见过的 connector 类型有四种，按使用情况分两组：
 
-**MooncakeConnector（基础版本）**：
+| connector | 当前出现于 | 状态 |
+|---|---|---|
+| `MooncakeConnectorV1` | DeepSeek-V3.1、GLM5、GLM5.1 | 在用 |
+| `MooncakeHybridConnector` | DeepSeek-V4-Pro、DeepSeek-V4-Flash | 在用 |
+| `MooncakeConnector` | 早期版本 | 历史保留（已不在主流模板里） |
+| `MooncakeLayerwiseConnector` | 早期版本 | 历史保留（已不在主流模板里） |
+
+> 重要：本 skill 一律**保留模板里的 connector 原值**，不做名称替换。教程会随版本演化新增/替换 connector，硬编码替换规则只会让产出与教程脱节。
+
+### kv_transfer_config 通用配置
+
+无论 connector 是哪一种，`kv_transfer_config` 的字段结构都一致：
 
 ```json
 {
-  "kv_connector": "MooncakeConnector",
+  "kv_connector": "<模板原值>",
   "kv_role": "kv_producer" | "kv_consumer",
   "kv_port": "{kv_port}",
   "engine_id": "{engine_id}",
@@ -19,20 +30,7 @@
 }
 ```
 
-**MooncakeLayerwiseConnector（分层版本）**：
-
-```json
-{
-  "kv_connector": "MooncakeLayerwiseConnector",
-  "kv_role": "kv_producer" | "kv_consumer",
-  "kv_port": "{kv_port}",
-  "engine_id": "{engine_id}",
-  "kv_connector_extra_config": {
-    "prefill": {"dp_size": X, "tp_size": Y},
-    "decode": {"dp_size": X, "tp_size": Y}
-  }
-}
-```
+需要替换的只有 `kv_port`、`engine_id` 与 `kv_connector_extra_config.{prefill,decode}.dp_size`——其它字段保留模板原值。
 
 ### kv_port 端口范围
 
@@ -43,14 +41,14 @@
 
 **注意**：kv_port 公式以 `36000` 为基数，同时满足 A2（≥28000）和 A3（≥36000）的要求。每个实例的 kv_port 必须唯一，按 100 递增分配（如 36000, 36100, 36200）。
 
-### 代理类型与 kv_connector 对应关系
+### 代理类型与 connector 的关系
 
-| 代理脚本 | 配合的 kv_connector | 路由方向 | 说明 |
-|---|---|---|---|
-| `load_balance_proxy_server_example.py` | MooncakeConnector | P → D | Prefill 发送 KV Cache 到 Decode |
-| `load_balance_proxy_layerwise_server_example.py` | MooncakeLayerwiseConnector | D → P | Decode 按需从 Prefill 拉取 KV Cache |
+| 代理脚本 | 默认搭配的 connector 家族 | 路由方向 |
+|---|---|---|
+| `load_balance_proxy_server_example.py` | 以 prefill→decode 推送为主（`MooncakeConnector` 系） | P → D |
+| `load_balance_proxy_layerwise_server_example.py` | 以 decode 拉取为主（`MooncakeLayerwiseConnector` 系） | D → P |
 
-**注意**：如果模板使用其他 kv_connector 类型（如 NpuConnector），保持原值不变，不进行替换。
+> `MooncakeConnectorV1` 和 `MooncakeHybridConnector` 在不同教程里都搭配过这两个 proxy 中的某一个；具体配对以教程模板为准，不要凭名字猜。本 skill 同时把两份 proxy 脚本拷贝到 `proxy/` 目录，由 `start_proxy.sh` 的 `PROXY_TYPE` 变量切换，部署时按教程或用户输入选用。
 
 ## 代理启动参数详解
 
@@ -102,6 +100,7 @@ python load_balance_proxy_layerwise_server_example.py \
 ### Prefill 参数
 
 ```text
+prefill_tp_size = kv_connector_extra_config.prefill.tp_size
 prefill_dp_size_local = 单机卡数 / prefill_tp_size
 prefill_dp_size = prefill_instances × nodes_per_prefill_instance × prefill_dp_size_local
 prefill_kv_port = 36000 + instance_index × 100
@@ -112,6 +111,7 @@ prefill_dp_rank_start = (node_index - 1) × prefill_dp_size_local (各实例独�
 ### Decode 参数
 
 ```text
+decode_tp_size = kv_connector_extra_config.decode.tp_size
 decode_dp_size_local = 单机卡数 / decode_tp_size
 decode_dp_size = decode_instances × nodes_per_decode_instance × decode_dp_size_local
 decode_kv_port = 36000 + prefill_instances × 100 + instance_index × 100
@@ -119,15 +119,15 @@ decode_engine_id = prefill_count + instance_index + 1 (继续递增)
 decode_dp_rank_start = (node_index - 1) × decode_dp_size_local (各实例独立计数，与 Prefill 一致)
 ```
 
-**重要**：dp_rank_start 计算规则与 step-06-generate.md 一致：单个实例内按节点递增，各实例独立计算。不要使用全局递增公式。
+**重要**：dp_rank_start 计算规则与 [step-04-generate.md](step-04-generate.md) 一致：单个实例内按节点递增，各实例独立计算。不要使用全局递增公式。生成时直接调用 [`scripts/compute_pd_params.py`](../scripts/compute_pd_params.py) 即可，无需手算。
 
 ### 示例配置（2P1D，A3，Prefill TP=8，Decode TP=4）
 
 ```text
-# Prefill 和 Decode 可能使用不同 tp_size
+# Prefill 和 Decode 可能使用不同 tp_size，均从 kv_connector_extra_config 获取
 单机卡数 = 16
-prefill_tp_size = 8  # 从 Prefill 模板获取
-decode_tp_size = 4   # 从 Decode 模板获取
+prefill_tp_size = kv_connector_extra_config.prefill.tp_size  # 例如 8
+decode_tp_size = kv_connector_extra_config.decode.tp_size   # 例如 4
 prefill_dp_size_local = 16 / 8 = 2
 decode_dp_size_local = 16 / 4 = 4
 
