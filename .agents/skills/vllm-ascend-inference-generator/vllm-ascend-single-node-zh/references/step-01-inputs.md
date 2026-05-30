@@ -10,7 +10,7 @@
 - 每组的第一个 option 是推荐项，label 末尾带 ` (Recommended)`。
 - 不要手动加 "Other"——客户端会自动补一个自由输入入口。
 
-## 第零批：模型和版本
+## 第零批：模型、版本与镜像
 
 ```json
 {
@@ -34,12 +34,41 @@
         {"label": "0.18.0", "description": "稳定版本"},
         {"label": "0.17.0", "description": "稳定版本"}
       ]
+    },
+    {
+      "header": "镜像来源",
+      "id": "image_source",
+      "question": "请选择容器镜像来源",
+      "options": [
+        {"label": "使用模板镜像 (Recommended)", "description": "沿用教程模板里的镜像，仅按 version 替换 |vllm_ascend_version| 占位符"},
+        {"label": "自定义镜像", "description": "用户提供完整镜像字符串，整体替换模板里的 IMAGE 行"}
+      ]
     }
   ]
 }
 ```
 
 > 版本到 GitHub 分支/tag 的映射见 [SKILL.md「版本映射」](../SKILL.md#版本映射共享)。
+
+仅当 `image_source = "自定义镜像"`，再补一问拿到完整镜像字符串：
+
+```json
+{
+  "questions": [
+    {
+      "header": "自定义镜像",
+      "id": "custom_image",
+      "question": "请输入完整镜像字符串（含 registry/repo:tag）",
+      "options": [
+        {"label": "quay.io/ascend/vllm-ascend:custom-tag（示例）", "description": "示例值，请通过 Other 输入实际镜像"},
+        {"label": "my-registry.internal/vllm-ascend:0.18.0-a3（示例）", "description": "示例值，请通过 Other 输入实际镜像"}
+      ]
+    }
+  ]
+}
+```
+
+> `image_source = "使用模板镜像"` 时跳过此追问；`custom_image` 在 step-04 整行替换 `start_container.sh` 中的 `IMAGE=...`。
 
 ## 第一批：基础配置
 
@@ -142,6 +171,8 @@
 |---|---|---|
 | model_name | 模型名称 | 必收 |
 | version | vllm-ascend 版本 | 必收 |
+| image_source | 镜像来源（模板/自定义） | 必收 |
+| custom_image | 自定义镜像完整字符串 | 仅 image_source=自定义镜像 |
 | machine_type | 硬件平台 | 必收 |
 | model_path | 模型权重路径 | 必收 |
 | extra_mounts | 额外挂载目录 | 必收 |

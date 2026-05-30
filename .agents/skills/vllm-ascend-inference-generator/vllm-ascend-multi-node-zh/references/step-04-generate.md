@@ -82,7 +82,8 @@ done
 
 | 原始 | 替换为 | 说明 |
 |---|---|---|
-| `|vllm_ascend_version|`（如出现） | `{version}` | 教程模板有时用占位符代替具体版本号 |
+| 整行 `export IMAGE=...` | `export IMAGE={custom_image}` | 仅当 `image_source = "自定义镜像"`；用户提供的完整镜像字符串整行覆盖，跳过下面 `|vllm_ascend_version|` 占位符替换 |
+| `|vllm_ascend_version|`（如出现） | `{version}` | 仅当 `image_source = "使用模板镜像"`；教程模板有时用占位符代替具体版本号；如果版本号前面没有 `v`，需要加上 `v` |
 | `-v <宿主机路径>:/root/.cache` | `-v {model_path}:{model_path}` | 容器内外路径一致 |
 | 无额外挂载行 | 在模型挂载行后追加 `-v {extra_mounts}:{extra_mounts}` | 用户选择"无额外挂载"时跳过 |
 
@@ -130,3 +131,4 @@ Node 0 vs Node N 的差异：
 - 自定义模式下 `.deploy_plan.json` 的关键字段（dp_size_local、dp_size_total、各节点 dp_rank_start）
 - 各节点目录与文件清单
 - 模式标记（使用模板 / 自定义）
+- `image_source` 取值；如为自定义镜像，记录 `custom_image`

@@ -50,7 +50,8 @@ cp sources/start_container.sh node/start_container.sh
 
 | 原始 | 替换为 | 说明 |
 |---|---|---|
-| `|vllm_ascend_version|`（如出现） | `{version}` | 教程模板有时用占位符代替具体版本号 |
+| 整行 `export IMAGE=...` | `export IMAGE={custom_image}` | 仅当 `image_source = "自定义镜像"`；用户提供的完整镜像字符串整行覆盖，跳过下面 `|vllm_ascend_version|` 占位符替换 |
+| `|vllm_ascend_version|`（如出现） | `{version}` | 仅当 `image_source = "使用模板镜像"`；教程模板有时用占位符代替具体版本号；如果版本号前面没有 `v`，需要加上 `v` |
 | `-v <宿主机路径>:/root/.cache` | `-v {model_path}:{model_path}` | 容器内外路径一致 |
 | `--shm-size=1g`（如出现） | `--shm-size=512g` | 大模型推荐共享内存 |
 | 无额外挂载行 | 在模型挂载行后追加 `-v {extra_mounts}:{extra_mounts}` | 用户选择"无额外挂载"时跳过 |
@@ -83,3 +84,4 @@ cp sources/run_single_node.sh node/run_serve.sh
 - 步骤状态
 - 生成的目录与文件清单
 - `parallel_config_mode` 取值；自定义模式下记录 `dp_size`、`tp_size`、`enable_ep`
+- `image_source` 取值；如为自定义镜像，记录 `custom_image`

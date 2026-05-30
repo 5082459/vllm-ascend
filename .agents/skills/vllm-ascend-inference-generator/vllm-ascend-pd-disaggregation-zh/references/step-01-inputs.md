@@ -24,12 +24,13 @@
    - `prefill_instances`、`decode_instances`、`nodes_per_prefill_instance`、`nodes_per_decode_instance`
    - `proxy_type`
    - 全部 Prefill IP（`prefill_p{P}_n{N}_ip`）、Decode IP（`decode_d{D}_n{N}_ip`）、`proxy_ip`
+   - `image_source`（如果为 `自定义镜像`，还要有 `custom_image`）；预定义参数表中未出现 `image_source` 时按 `使用模板镜像` 处理
 
 命中预定义模式时，在日志记录「步骤 1：使用预定义参数，跳过交互式问答」。
 
 ## 参数收集
 
-### 第零批：模型与版本
+### 第零批：模型、版本与镜像
 
 ```json
 {
@@ -53,10 +54,39 @@
         {"label": "0.18.0", "description": "稳定版本 0.18.0"},
         {"label": "0.17.0", "description": "稳定版本 0.17.0"}
       ]
+    },
+    {
+      "header": "镜像来源",
+      "id": "image_source",
+      "question": "请选择容器镜像来源",
+      "options": [
+        {"label": "使用模板镜像 (Recommended)", "description": "沿用教程模板里的镜像，仅按 version 替换 |vllm_ascend_version| 占位符"},
+        {"label": "自定义镜像", "description": "用户提供完整镜像字符串，整体替换模板里的 IMAGE 行"}
+      ]
     }
   ]
 }
 ```
+
+仅当 `image_source = "自定义镜像"`，再补一问拿到完整镜像字符串：
+
+```json
+{
+  "questions": [
+    {
+      "header": "自定义镜像",
+      "id": "custom_image",
+      "question": "请输入完整镜像字符串（含 registry/repo:tag）",
+      "options": [
+        {"label": "quay.io/ascend/vllm-ascend:custom-tag（示例）", "description": "示例值，请通过 Other 输入实际镜像"},
+        {"label": "my-registry.internal/vllm-ascend:0.18.0-a3（示例）", "description": "示例值，请通过 Other 输入实际镜像"}
+      ]
+    }
+  ]
+}
+```
+
+> `image_source = "使用模板镜像"` 时跳过此追问；`custom_image` 在 step-04 整行替换 `start_container.sh` 中的 `IMAGE=...`。
 
 ### 第一批：硬件与挂载
 
@@ -225,6 +255,8 @@
 |---|---|---|
 | model_name | model_name | 模型名称 |
 | version | version | vllm-ascend 版本 |
+| image_source | image_source | 镜像来源（模板/自定义） |
+| custom_image | custom_image | 自定义镜像完整字符串（仅 image_source=自定义镜像） |
 | machine_type | machine_type | 硬件平台 |
 | model_path | model_path | 模型权重路径 |
 | extra_mounts | extra_mounts | 额外挂载目录 |

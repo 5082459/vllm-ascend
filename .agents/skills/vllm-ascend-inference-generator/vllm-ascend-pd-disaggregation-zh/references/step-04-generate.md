@@ -97,7 +97,8 @@ cp sources/start_container.sh decode/start_container.sh
 
 | 原始 | 替换为 | 说明 |
 |---|---|---|
-| `|vllm_ascend_version|`（如出现） | `{version}` | 教程模板有时用占位符代替具体版本号 |
+| 整行 `export IMAGE=...` | `export IMAGE={custom_image}` | 仅当 `image_source = "自定义镜像"`；用户提供的完整镜像字符串整行覆盖，跳过下面 `|vllm_ascend_version|` 占位符替换 |
+| `|vllm_ascend_version|`（如出现） | `{version}` | 仅当 `image_source = "使用模板镜像"`；教程模板有时用占位符代替具体版本号；如果版本号前面没有 `v`，需要加上 `v` |
 | `-v <宿主机路径>:/root/.cache` | `-v {model_path}:{model_path}` | 容器内外路径一致，便于 vllm serve 直接复用 |
 | 无额外挂载行 | 在模型挂载行后追加 `-v {extra_mounts}:{extra_mounts}` | 用户选择"无额外挂载"时跳过此项 |
 
@@ -230,3 +231,4 @@ fi
 - `.pd_plan.json` 关键字段（prefill_dp_size、decode_dp_size、prefill_dp_size_local、decode_dp_size_local）
 - 各节点的 kv_port、engine_id、dp_rank_start
 - proxy hosts/ports 总长度
+- `image_source` 取值；如为自定义镜像，记录 `custom_image`
