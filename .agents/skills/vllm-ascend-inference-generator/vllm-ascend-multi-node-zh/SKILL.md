@@ -90,14 +90,3 @@ description: 多节点 vllm-ascend 推理服务部署脚本生成。【重要约
 
 - `parallel_config_mode = "使用模板配置"`：保留模板中的 DP/TP/EP，**不**重新计算（教程作者针对该机型 + 模型已挑过推荐切分）。
 - `parallel_config_mode = "自定义并行配置"`：用 [`scripts/compute_multi_node_params.py`](scripts/compute_multi_node_params.py) 一次算出每个节点的 `dp_size_local`、`dp_size_total`、`dp_rank_start`，不要在生成过程中临时算。
-
-## 验证与回归
-
-本 skill 已有完整测试基础设施位于 `tests/vllm-ascend-multi-node-zh/`：
-
-- `trigger/` — 触发测试
-- `scenarios/*/baseline/` — 场景产出基线
-- `runs/` — 历史运行记录
-- 主入口工具：`tests/tools/run_test.py`
-
-修改本 skill 后，至少跑一遍 `run_test.py` 与基线 diff，避免参数漂移。

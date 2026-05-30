@@ -61,16 +61,24 @@
 
 **重要**：必须按 Prefill → Decode → Proxy 顺序启动。
 
-1. 在每台 Prefill 节点机器上（按实例 / 节点编号进入对应目录）：
+1. 在每台 Prefill 节点机器上，先启动容器：
    ```bash
-   cd prefill/instance<N>/node<M>
+   cd prefill
    ./start_container.sh
+   ```
+   进入容器后，按实例 / 节点编号启动服务：
+   ```bash
+   cd instance<N>/node<M>
    ./start_serve.sh
    ```
-2. 在每台 Decode 节点机器上：
+2. 在每台 Decode 节点机器上，先启动容器：
    ```bash
-   cd decode/instance<N>/node<M>
+   cd decode
    ./start_container.sh
+   ```
+   进入容器后，按实例 / 节点编号启动服务：
+   ```bash
+   cd instance<N>/node<M>
    ./start_serve.sh
    ```
 3. 在代理机上：

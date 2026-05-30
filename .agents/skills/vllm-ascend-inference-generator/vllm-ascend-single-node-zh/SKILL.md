@@ -88,14 +88,3 @@ description: 单节点 vllm-ascend 推理服务部署脚本生成。【重要约
 
 - `parallel_config_mode = "使用模板配置"`：保留模板中的 DP/TP/EP，**不**重新计算（教程作者针对该机型 + 模型已挑过推荐切分）。
 - `parallel_config_mode = "自定义并行配置"`：按 `dp_size_local = 单机卡数 / tp_size` 计算。当用户的 `dp_size` 选 "自动计算" 时使用该公式，否则取用户值。EP 仅当 `enable_ep = "启用"` 时附加 `--enable-expert-parallel`。
-
-## 验证与回归
-
-本 skill 已有完整测试基础设施位于 `tests/vllm-ascend-single-node-zh/`：
-
-- `trigger/` — 触发测试
-- `scenarios/*/baseline/` — 场景产出基线
-- `runs/` — 历史运行记录
-- 主入口工具：`tests/tools/run_test.py`
-
-修改本 skill 后，至少跑一遍 `run_test.py` 与基线 diff，避免参数漂移。

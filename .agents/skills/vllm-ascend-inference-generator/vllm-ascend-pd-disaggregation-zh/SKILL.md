@@ -94,14 +94,3 @@ description: 当用户要求生成适用于 Ascend 的 vllm-ascend PD分离 / Pr
 | 分层版本 | load_balance_proxy_layerwise_server_example.py |
 
 > `kv_connector` 字段一律**保留模板原值**。教程里出现过 `MooncakeConnector` / `MooncakeConnectorV1` / `MooncakeLayerwiseConnector` / `MooncakeHybridConnector` 四种名称，且会随版本继续演化——硬编码替换规则只会让产出与教程脱节。connector 与 proxy 的匹配以教程为准，本 skill 同时拷贝两份 proxy 脚本，部署侧用 `PROXY_TYPE` 切换。详见 [appendix-pd-resources.md](references/appendix-pd-resources.md)。
-
-## 验证与回归
-
-本 skill 已有完整测试基础设施位于 `tests/vllm-ascend-pd-disaggregation-zh/`：
-
-- `trigger/` — 触发测试（skill 是否被正确触发）
-- `scenarios/*/baseline/` — 7 个场景的产出基线
-- `runs/` — 历史运行记录
-- 主入口工具：`tests/tools/run_test.py`
-
-修改本 skill 后，至少跑一遍 `run_test.py` 与基线 diff，避免参数漂移。
