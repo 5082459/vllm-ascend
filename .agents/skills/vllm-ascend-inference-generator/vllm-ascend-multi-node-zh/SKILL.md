@@ -45,12 +45,16 @@ description: 多节点 vllm-ascend 推理服务部署脚本生成。【重要约
 
 ### 输出目录命名
 
-格式：`multi_node_{model_normalized}_{N}nodes`
+格式：`multi_node_{model_normalized}_{N}nodes_{machine_type}`
 
 - `model_normalized`：把模型名转小写，再把 `-` 和 `.` 都替换成 `_`，去掉重复下划线
 - `{N}` = 节点数量 (`node_count`)
+- `machine_type` = 机型后缀（`a3` 或 `a2`）
 
-示例：`multi_node_deepseek_v3_1_2nodes`
+示例：
+- A3 16卡：`multi_node_deepseek_v3_1_2nodes_a3`
+- A2 8卡：`multi_node_deepseek_v3_1_2nodes_a2`
+- 4节点 A3：`multi_node_deepseek_v3_1_4nodes_a3`
 
 > 该命名被现有测试基线锁定，**不要随意更改**。
 

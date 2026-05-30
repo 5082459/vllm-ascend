@@ -82,6 +82,7 @@ done
 
 | 原始 | 替换为 | 说明 |
 |---|---|---|
+| `|vllm_ascend_version|`（如出现） | `{version}` | 教程模板有时用占位符代替具体版本号 |
 | `-v <宿主机路径>:/root/.cache` | `-v {model_path}:{model_path}` | 容器内外路径一致 |
 | 无额外挂载行 | 在模型挂载行后追加 `-v {extra_mounts}:{extra_mounts}` | 用户选择"无额外挂载"时跳过 |
 
