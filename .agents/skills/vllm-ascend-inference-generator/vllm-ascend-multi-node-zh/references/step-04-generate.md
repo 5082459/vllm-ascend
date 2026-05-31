@@ -32,7 +32,7 @@
 - 输出目录命名见 [SKILL.md「输出目录命名」](../SKILL.md#输出目录命名)。
 - 并行参数策略见 [SKILL.md「并行参数策略」](../SKILL.md#并行参数策略)。
 - **自定义并行配置**模式下的 `dp_size_local`、`dp_size_total`、各节点 `dp_rank_start` 一律由 [`scripts/compute_multi_node_params.py`](../scripts/compute_multi_node_params.py) 一次算出，不要在生成过程中临时算。
-- **只修改替换表中列出的占位符和参数**。模板中任何未列入替换表的内容（如 `--quantization ascend`、`--speculative-config`、`--compilation-config` 等参数行）必须原样保留，不得添加、删除或修改。
+- **非必要不修改**。替换表列出的占位符和参数必须完成替换；替换表未列出但影响部署正确性的内容也须修改（如 A3 机型需扩展 NPU 设备列表至 16 卡、模型标识符需替换为用户指定的本地路径、`--served-model-name` 需替换为规范化模型名、Node 0 需显式写 `--data-parallel-start-rank 0`）。不影响部署正确性的参数行（如 `--quantization ascend`、`--speculative-config`、`--compilation-config`）原样保留。
 
 ## 目录结构
 
