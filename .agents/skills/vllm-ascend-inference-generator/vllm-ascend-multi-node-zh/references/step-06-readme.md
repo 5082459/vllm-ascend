@@ -30,6 +30,7 @@
    | `{parallel_config_mode}` | step-01 |
    | `{dp_size_local}` / `{dp_size_total}` / `{tp_size}` | step-04（自定义模式来自 plan；模板模式填 "模板默认"） |
    | `{enable_ep}` | step-01（仅自定义模式有值） |
+   | `{node0_ip}` | step-01（Master 节点 IP，用于 Testing 段 curl 命令） |
    | `{generation_timestamp}` | 当前时间 |
 
 3. **展开循环段**：

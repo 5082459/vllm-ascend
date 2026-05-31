@@ -87,8 +87,6 @@ cd node{N}
 
 | 占位符 | 含义 | 替换为 |
 |---|---|---|
-| `<NODE0_IP>` | Master 节点 IP | Node 0 实际 IP |
-
 并行配置说明：
 - 当前模式：**{parallel_config_mode}**
 - TP / DP_local / DP_total：{tp_size} / {dp_size_local} / {dp_size_total}
@@ -101,10 +99,10 @@ cd node{N}
 
 ```bash
 # 列出已加载模型
-curl http://<NODE0_IP>:8000/v1/models
+curl http://{node0_ip}:8000/v1/models
 
 # 推理测试
-curl http://<NODE0_IP>:8000/v1/completions \
+curl http://{node0_ip}:8000/v1/completions \
   -H "Content-Type: application/json" \
   -d '{"model": "{model_name}", "prompt": "Hello", "max_tokens": 100}'
 ```

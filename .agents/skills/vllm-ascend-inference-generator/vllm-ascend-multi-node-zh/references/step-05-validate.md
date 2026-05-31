@@ -44,7 +44,7 @@
 |---|---|---|
 | Node 0 无 headless | Grep `node0/run_serve.sh` | 不含 `--headless` |
 | Node N 有 headless（N≥1） | Grep `nodeN/run_serve.sh` | 含 `--headless` |
-| `--data-parallel-address` 一致 | Grep 所有节点 | 全部为 `<NODE0_IP>`（占位符） |
+| `--data-parallel-address` 一致 | Grep 所有节点 | 全部为 `$node0_ip`（引用脚本头部变量） |
 | `--data-parallel-rpc-port` 一致 | Grep | 全部 `13389` |
 | 模型路径已替换 | Grep `{model_path}` | 存在；不再出现 `/path_to_weight` |
 

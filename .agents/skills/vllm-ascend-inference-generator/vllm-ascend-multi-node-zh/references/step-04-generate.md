@@ -32,6 +32,7 @@
 - 输出目录命名见 [SKILL.md「输出目录命名」](../SKILL.md#输出目录命名)。
 - 并行参数策略见 [SKILL.md「并行参数策略」](../SKILL.md#并行参数策略)。
 - **自定义并行配置**模式下的 `dp_size_local`、`dp_size_total`、各节点 `dp_rank_start` 一律由 [`scripts/compute_multi_node_params.py`](../scripts/compute_multi_node_params.py) 一次算出，不要在生成过程中临时算。
+- **只修改替换表中列出的占位符和参数**。模板中任何未列入替换表的内容（如 `--quantization ascend`、`--speculative-config`、`--compilation-config` 等参数行）必须原样保留，不得添加、删除或修改。
 
 ## 目录结构
 
@@ -113,7 +114,7 @@ cp sources/run_node{template_idx}.sh node${N}/run_serve.sh
 |---|---|---|
 | `--data-parallel-size {dp_size_total}` | plan.dp_size_total | 4.1 |
 | `--data-parallel-size-local {dp_size_local}` | plan.dp_size_local | 4.1 |
-| `--data-parallel-address` | `<NODE0_IP>` 占位符 | 用户部署时再替换为实际 IP |
+| `--data-parallel-address` | `$node0_ip` | 使用脚本头部已定义的 `node0_ip` shell 变量 |
 | `--data-parallel-rpc-port` | `13389` | 默认值 |
 | `--data-parallel-start-rank` | plan.nodes[N].dp_rank_start | 4.1 |
 | `--tensor-parallel-size {tp_size}` | 用户值 | step-01 |
